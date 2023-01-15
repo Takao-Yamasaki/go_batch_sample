@@ -16,10 +16,13 @@ func TestConnectDB(t *testing.T) {
 // SQLのテスト
 func TestInsertData(t *testing.T) {
 	db := connectDB()
-	defer db.Close()
+
+	var name string = "testcat"
+	var breed string = "testbreed"
+	var age int = 4
 
 	sql := "INSERT INTO cats(name, breed, age) VALUES(?, ?, ?);"
-	result, err := db.Exec(sql, "abutato", "hoshiimo", 4)
+	result, err := db.Exec(sql, name, breed, age)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -29,4 +32,11 @@ func TestInsertData(t *testing.T) {
 	if rowsAffected != 1 {
 		t.Error("Insertion of data failed")
 	}
+
+	// 後処理
+	t.Cleanup(func() {
+		defer db.Close()
+		sql := "DELETE FROM cats WHERE name = ? AND breed = ? AND age = ? ;"
+		db.Exec(sql, "testcat", "testbreed", 4)
+	})
 }
