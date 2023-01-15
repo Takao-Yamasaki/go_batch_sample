@@ -1,28 +1,55 @@
 package main
 
 import (
+	"database/sql"
+	"os"
 	"testing"
 )
 
-// データベース接続
-func TestConnectDB(t *testing.T) {
-	db := connectDB()
-	if db == nil {
-		t.Error("Failed to connect to DB")
+var testDB *sql.DB
+
+func setup() error {
+	var err error
+
+	testDB = connectDB()
+	if testDB == nil {
+		return err
 	}
-	defer db.Close()
+	return nil
 }
+
+func teardown() {
+	testDB.Close()
+}
+
+func TestMain(m *testing.M) {
+	err := setup()
+	if err != nil {
+		os.Exit(1)
+	}
+
+	m.Run()
+
+	teardown()
+}
+
+// データベース接続
+// func TestConnectDB(t *testing.T) {
+// 	db := connectDB()
+// 	if db == nil {
+// 		t.Error("Failed to connect to DB")
+// 	}
+// 	defer db.Close()
+// }
 
 // SQLのテスト
 func TestInsertData(t *testing.T) {
-	db := connectDB()
-
 	var name string = "testcat"
 	var breed string = "testbreed"
 	var age int = 4
 
 	sql := "INSERT INTO cats(name, breed, age) VALUES(?, ?, ?);"
-	result, err := db.Exec(sql, name, breed, age)
+	result, err := testDB.Exec(sql, name, breed, age)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -35,8 +62,7 @@ func TestInsertData(t *testing.T) {
 
 	// 後処理
 	t.Cleanup(func() {
-		defer db.Close()
 		sql := "DELETE FROM cats WHERE name = ? AND breed = ? AND age = ? ;"
-		db.Exec(sql, "testcat", "testbreed", 4)
+		testDB.Exec(sql, name, breed, age)
 	})
 }
